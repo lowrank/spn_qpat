@@ -13,6 +13,8 @@ classdef SPN < handle
         Coeff    % COEFFICIENTS OF THE SYSTEM
         Source   % BOUNDARY SOURCE FUNCTION
         Model    % FINITE ELEMENT SOLVER
+        Approx   % APPROXIMATION FLAG
+        G        % ANISOTROPY PARAMETER
     end
     
     %%% PRIVATE PROPERTIES (DEBUG MODE ON, TURN ACCESS TO PRIVATE WHEN RELEASE)
@@ -26,7 +28,15 @@ classdef SPN < handle
             assert(isfield(opt, 'femm_opt'));
             assert(isfield(opt, 'coeff'));
             assert(isfield(opt, 'source'));
-            assert(isfield(opt, 'order'));
+            assert(isfield(opt, 'order') && mod(opt.order,2) == 1);
+            assert(isfield(opt, 'approx'));
+            assert(isfield(opt, 'g'));
+            
+            
+            % LOAD APPROXIMATION OPTION, NONZERO MEANS USING APPROXIMATION
+            obj.Approx = opt.approx;
+            obj.Order  = opt.order;
+            obj.G      = opt.g;
             
             % LOAD THE FINITE ELEMENT SOLVER
             obj.Model = femm(opt.femm_opt);
@@ -57,14 +67,84 @@ classdef SPN < handle
             % BOUNDARY MATRIX.
             obj.cache.E = obj.Model.build('e', 1, 'all');
             
+            % LOAD PRE-DEFINED MATRICES
+            T = Tfunc( (obj.Order+1)/2 );
+            R = Rfunc( (obj.Order+1)/2 ); 
+            
+            obj.cache.K = inv(T);
+            obj.cache.B = R * obj.cache.K;
+            
         end
         
-        function data = genData(obj)
-            % The internal data is from the matrix-vector multiplication.
-            % The vector is generated from the SPN system. See
-            % "./functions" directory. The solution forms a matrix 
-            % representing each mode on each point (node).
+        function [Y] = assemble(obj, X)
+            % RETURN THE ASSEMBLED MATRIX APPLIED TO A VECTOR/MATRIX INSTEAD OF 
+            % RETURNING THE WHOLE MATRIX.
             
+            % THE REASON IS: SAVING THE FULL MATRIX MIGHT BE TOO DIFFICULT
+            % FOR A LAPTOP TO WORK IF THERE ARE TOO MANY MODES INVOLVED.
+            % THE OTHER REASON IS: FOR THE APPROXIMATED VERSION, THE
+            % MATRICES ARE REPEATING THEMSELVES, ONE SHOULD NOT CREATE THE
+            % MATRICES EACH TIME.
+            
+            N = size(obj.Model.space.nodes, 2);
+            L = (obj.Order + 1) / 2;
+            
+            % VALIDATION OF INPUT, DEBUG MODE ONLY. COMMENT OUT IF SPEED IS
+            % IMPORTANT.
+            assert(numel(X) == N * L);
+            
+            % PREPARE THE OUTPUT
+            Y = zeros(N, L);
+            
+            if obj.Approx == 1
+                % USE APPROXIMATION MODEL. THE COEFFICIENTS ARE DECOUPLED.
+                
+                % STEP 1. STIFFNESS
+                % TODO: ADD ANISOTROPY.
+                for n = 1:L
+                    Y(:, n)= Y(:, n) +...
+                        obj.cache.S * X(:, n)/ (4 * n - 1);
+                end
+                
+                % STEP 2. MASS
+                
+                % PREPARE, IT IS NOT CHEAP HERE.
+                Z1 = obj.cache.MS * X;
+                Z2 = obj.cache.MA * X;
+                
+                for n = 1:L
+                    s_n = obj.cache.K(n, :); % ROW VECTOR !!
+                    theta = zeros(N, 1);
+ 
+                    % GET THE COMMON VECTORS
+                    if n ~= 1
+                        for k = 1:L
+                            theta = theta + s_n(k) * Z1(:, k);
+                        end
+                    else
+                        for k = 1:L
+                            theta = theta + s_n(k) * Z2(:, k);
+                        end
+                    end
+                    
+                    % PROPORTIONAL APPLY TO EACH COMPONENT. HERE THE
+                    % TRIANGULAR SHAPE OF T IS NOT USED, THE TIMING HERE IS
+                    % ABOUT TWICE EXPENSIVE. 
+                    
+                    for j = 1:L
+                        Y(:, j) = Y(:,j) +  (4*n-3) * s_n(j) * theta;
+                    end
+                end
+                        
+                % STEP 3. TRACE
+                for n = 1:L
+                    
+                end
+            else
+                
+                disp('Not Implemented Error.\n');
+                
+            end
             
             
             
