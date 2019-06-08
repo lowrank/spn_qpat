@@ -37,6 +37,7 @@ classdef SPN < handle
             obj.Approx = opt.approx;
             obj.Order  = opt.order;
             obj.G      = opt.g;
+            obj.Source = opt.source;
             
             % LOAD THE FINITE ELEMENT SOLVER
             obj.Model = femm(opt.femm_opt);
@@ -73,10 +74,11 @@ classdef SPN < handle
             
             obj.cache.K = inv(T);
             obj.cache.B = R * obj.cache.K;
+            obj.cache.k = Kfunc( (obj.Order+1)/2  );
             
         end
         
-        function [Y] = assemble(obj, X)
+        function [Y_] = assemble(obj, X_)
             % RETURN THE ASSEMBLED MATRIX APPLIED TO A VECTOR/MATRIX INSTEAD OF 
             % RETURNING THE WHOLE MATRIX.
             
@@ -86,11 +88,17 @@ classdef SPN < handle
             % MATRICES ARE REPEATING THEMSELVES, ONE SHOULD NOT CREATE THE
             % MATRICES EACH TIME.
             
+            % RESHAPE THE INPUT?
+            
+            
             N = size(obj.Model.space.nodes, 2);
             L = (obj.Order + 1) / 2;
+            g = obj.G;
             
             % VALIDATION OF INPUT, DEBUG MODE ONLY. COMMENT OUT IF SPEED IS
             % IMPORTANT.
+            
+            X = reshape(X_, N, L);
             assert(numel(X) == N * L);
             
             % PREPARE THE OUTPUT
@@ -100,10 +108,9 @@ classdef SPN < handle
                 % USE APPROXIMATION MODEL. THE COEFFICIENTS ARE DECOUPLED.
                 
                 % STEP 1. STIFFNESS
-                % TODO: ADD ANISOTROPY.
                 for n = 1:L
                     Y(:, n)= Y(:, n) +...
-                        obj.cache.S * X(:, n)/ (4 * n - 1);
+                        obj.cache.S * X(:, n)/ (4 * n - 1) / (1 - g^(2*n-1));
                 end
                 
                 % STEP 2. MASS
@@ -132,13 +139,22 @@ classdef SPN < handle
                     % ABOUT TWICE EXPENSIVE. 
                     
                     for j = 1:L
-                        Y(:, j) = Y(:,j) +  (4*n-3) * s_n(j) * theta;
+                        if n~= 1
+                            % IT SHOULD BE SIGMA_A + (1 - G^(2N-2)) SIGMA_S
+                            Y(:, j) = Y(:,j) +  (4*n-3) * (1 - g^(2*n-2)) * s_n(j) * theta;
+                        else
+                            Y(:, j) = Y(:,j) +  (4*n-3) * 1 * s_n(j) * theta;
+                        end
                     end
                 end
                         
                 % STEP 3. TRACE
-                for n = 1:L
-                    
+                Z3 = obj.cache.E * X;
+                
+                for j = 1:L
+                    for k =  1:L
+                       Y(:, j) = Y(:, j) + obj.cache.B(j, k) * Z3(:, k);
+                    end
                 end
             else
                 
@@ -146,9 +162,32 @@ classdef SPN < handle
                 
             end
             
-            
-            
+            % RESHAPE?
+            Y_ = reshape(Y, N*L, 1);
         end
+        
+        
+        function [l_] = load(obj, f)
+            % GET LOAD VECTOR FROM F.
+            load_f = obj.mapping1D(f, obj.Model.space.edges, obj.Model.edge.ref');
+            N = size(obj.Model.space.nodes, 2);
+            L = (obj.Order + 1) / 2;
+            
+            l = zeros(N, L);
+            y = obj.Model.build('g', load_f ,'all');
+            for i = 1:L
+                l(:, i) = obj.cache.k(i) * y;
+            end
+            
+            l_ = reshape(l, N*L, 1);
+        end
+        
+        
+        function plot(obj, Y)
+            % PLOT ALL MODES
+        end
+        
+        
     end
     
     
@@ -159,6 +198,14 @@ classdef SPN < handle
             interpolate = zeros(numberofqnodes, size(elems, 2));
             for i = 1: size(elems, 2)
                 interpolate(:, i) = trans_ref * func(elems(:, i));
+            end
+        end
+        
+        function [interpolate] = mapping1D(func, edges, trans_ref)
+            numberofqnodes = size(trans_ref, 1);
+            interpolate = zeros(numberofqnodes, size(edges, 2));
+            for i = 1:size(edges, 2)
+                interpolate(:, i) = trans_ref * func(edges(:, i));
             end
         end
     end
