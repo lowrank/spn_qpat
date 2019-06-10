@@ -78,6 +78,48 @@ classdef SPN < handle
             
         end
         
+        function [M] = assembleMatrix(obj)
+            % RETURN THE ASSEMBLED MATRIX DIRECTLY. SOLVING THE LINEAR
+            % EQUATION WILL BE CHANLLENGING IF THE SYSTEM IS LARGE.
+            % PARTICULARLY THE PRECONDITIONER IS NOT AVAILABLE EXPLICITLY.
+            
+            N = size(obj.Model.space.nodes, 2);
+            L = (obj.Order + 1) / 2;
+            g = obj.G;
+            
+            
+            M = spzeros(N * L, N * L);
+            
+            
+            if obj.Approx == 1
+                % INDEXING MIGHT BE SLOW.
+                
+                % STEP 1. STIFFNESS (diagonal)
+                for n = 1:L
+                    M((n-1)*N+1:n*N, (n-1)*N+1:n*N) = ...
+                        obj.cache.S / (4 * n - 1) / (1 - g^(2*n-1));
+                end
+                
+                % STEP 2. MASS 
+                
+                for n = 1:L
+                    s_n = obj.cache.K(n, :); % ROW VECTOR !!
+                    theta = zeros(N, 1);
+                    
+                    
+                    
+                end
+                
+                % STEP 3. TRACE
+                
+                
+            else
+                disp('Not Implemented Error.\n');
+            end
+            
+        end
+        
+        
         function [Y_] = assemble(obj, X_)
             % RETURN THE ASSEMBLED MATRIX APPLIED TO A VECTOR/MATRIX INSTEAD OF 
             % RETURNING THE WHOLE MATRIX.
