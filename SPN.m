@@ -78,7 +78,7 @@ classdef SPN < handle
             
         end
         
-        function [M] = assembleMatrix(obj)
+        function [M] = assemblePreCondMatrix(obj)
             % RETURN THE ASSEMBLED MATRIX DIRECTLY. SOLVING THE LINEAR
             % EQUATION WILL BE CHANLLENGING IF THE SYSTEM IS LARGE.
             % PARTICULARLY THE PRECONDITIONER IS NOT AVAILABLE EXPLICITLY.
@@ -88,7 +88,7 @@ classdef SPN < handle
             g = obj.G;
             
             
-            M = spzeros(N * L, N * L);
+            M = sparse(N * L, N * L);
             
             
             if obj.Approx == 1
@@ -101,17 +101,15 @@ classdef SPN < handle
                 end
                 
                 % STEP 2. MASS 
+                % SKIPPED SINCE IT IS USUALLY SMALL.
                 
-                for n = 1:L
-                    s_n = obj.cache.K(n, :); % ROW VECTOR !!
-                    theta = zeros(N, 1);
-                    
-                    
-                    
+                % STEP 3. TRACE                
+                for j = 1:L
+                    for k =  1:L
+                       M((j-1)*N+1:j*N, (k-1)*N+1:k*N) = ...
+                           M((j-1)*N+1:j*N, (k-1)*N+1:k*N) + obj.cache.B(j, k) * obj.cache.E;
+                    end
                 end
-                
-                % STEP 3. TRACE
-                
                 
             else
                 disp('Not Implemented Error.\n');
@@ -227,6 +225,40 @@ classdef SPN < handle
         
         function plot(obj, Y)
             % PLOT ALL MODES
+            L = (obj.Order + 1) / 2;
+            N = size(obj.Model.space.nodes, 2);
+            
+            C = floor(sqrt(L));
+            S = L - C^2;
+            
+            if S > 0
+                R = C + 1;
+            else
+                R = C;
+            end
+
+            idx = 0;
+            for r = 1:R                    
+                for c = 1:C
+                    idx = idx + 1;
+                    if idx > L
+                        break;
+                    end
+                    subplot(R,C,idx);
+                    trisurf(obj.Model.space.elems(1:3,:)', ...
+                        obj.Model.space.nodes(1,:), obj.Model.space.nodes(2,:),...
+                        Y((idx-1)*N+1:idx*N), ...
+                        'EdgeColor', 'None');
+                    
+                    view(2);
+                    colormap jet;
+                    colorbar;
+                    shading interp;
+                end
+
+            end
+            
+
         end
         
         
