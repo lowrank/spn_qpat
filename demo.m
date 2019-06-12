@@ -3,7 +3,7 @@
 absorption = @(x)(0.01 + 0.01 * x(1,:));
 scattering = @(x)(1.5  + 2.2 * x(2,:));
 gruneisen  = @(x)(0.75 + 0 * x(1,:));
-source     = @(x)(1.0  + 0.2 * x(1,:));
+source     = @(x)(0.2 * x(1,:));
 
 %%% finite element method option struct.
 femm_opt   = struct(...

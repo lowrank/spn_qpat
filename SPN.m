@@ -71,10 +71,11 @@ classdef SPN < handle
             % LOAD PRE-DEFINED MATRICES
             T = Tfunc( (obj.Order+1)/2 );
             R = Rfunc( (obj.Order+1)/2 ); 
-            
+
             obj.cache.K = inv(T);
             obj.cache.B = R * obj.cache.K;
             obj.cache.k = Kfunc( (obj.Order+1)/2  );
+            
             
         end
         
@@ -101,7 +102,15 @@ classdef SPN < handle
                 end
                 
                 % STEP 2. MASS 
-                % SKIPPED SINCE IT IS USUALLY SMALL.
+                % USE KRON TO DEFINE THE MASS MATRIX 
+                
+                s_1 = obj.cache.K(1, :);
+                M = M + kron(s_1' * s_1, obj.cache.MA);
+                
+                for n = 2:L
+                    s_n = obj.cache.K(n, :);
+                    M = M + (1-g^(2 * n - 2)) * (4*n-3) * kron(s_n' * s_n, obj.cache.MS);
+                end
                 
                 % STEP 3. TRACE                
                 for j = 1:L
