@@ -96,10 +96,8 @@ classdef SPN < handle
                 % INDEXING MIGHT BE SLOW.
                 
                 % STEP 1. STIFFNESS (diagonal)
-                for n = 1:L
-                    M((n-1)*N+1:n*N, (n-1)*N+1:n*N) = ...
-                        obj.cache.S / (4 * n - 1) / (1 - g^(2*n-1));
-                end
+                v = diag( 1./( 4 * (1:L) - 1) ./ (1 - g.^(2*(1:L) - 1)) );
+                M = kron(v, obj.cache.S);
                 
                 % STEP 2. MASS 
                 % USE KRON TO DEFINE THE MASS MATRIX 
@@ -113,12 +111,7 @@ classdef SPN < handle
                 end
                 
                 % STEP 3. TRACE                
-                for j = 1:L
-                    for k =  1:L
-                       M((j-1)*N+1:j*N, (k-1)*N+1:k*N) = ...
-                           M((j-1)*N+1:j*N, (k-1)*N+1:k*N) + obj.cache.B(j, k) * obj.cache.E;
-                    end
-                end
+                M = M + kron(obj.cache.B, obj.cache.E);
                 
             else
                 disp('Not Implemented Error.\n');
@@ -270,6 +263,17 @@ classdef SPN < handle
 
         end
         
+        function plotData(obj, H)
+            figure(2);
+            trisurf(obj.Model.space.elems(1:3,:)', ...
+                    obj.Model.space.nodes(1,:), obj.Model.space.nodes(2,:),...
+                    H, ...
+                    'EdgeColor', 'None');
+            view(2);
+            colormap jet;
+            colorbar;
+            shading interp;
+        end
         
     end
     

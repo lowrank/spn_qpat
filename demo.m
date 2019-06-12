@@ -1,15 +1,15 @@
-% This file contains a demo for the class SPN.
+% DEMO FOR SPN CLASS
 
-absorption = @(x)(0.01 + 0.01 * x(1,:));
+absorption = @(x)(0.5 + 0.1 * x(1,:));
 scattering = @(x)(1.5  + 2.2 * x(2,:));
 gruneisen  = @(x)(0.75 + 0 * x(1,:));
-source     = @(x)(0.2 * x(1,:));
+source     = @(x)(0.2 * x(1,:) .* x(2,:));
 
-%%% finite element method option struct.
+%%% FEM CLASS OPTION
 femm_opt   = struct(...
     'deg', 1,...
     'qdeg', 3, ...
-    'min_area', 1e-4, ...
+    'min_area', 4e-5, ...
     'edge', [0 1 1 0; 0 0 1 1]...
     );
 
@@ -21,7 +21,7 @@ coeff_opt  = struct(...
 
 %%% The option struct for SPN.
 opt = struct(...
-    'order', 11, ...
+    'order', 1, ...
     'femm_opt', femm_opt, ...
     'coeff', coeff_opt,...
     'source', source,...
@@ -32,19 +32,34 @@ opt = struct(...
 Sp = SPN(opt);
 N  = size(Sp.Model.space.nodes, 2);
 L  = (Sp.Order + 1 ) / 2;
+
+% BUILD THE MATRIX M IF MEMORY IS ENOUGH.
 M  = Sp.assemblePreCondMatrix();
 
 f = Sp.Source(Sp.Model.space.nodes)';
 
 load = Sp.load(f);
 
-tic;
-x = gmres(@Sp.assemble, load, 10, 1e-6, 3200, M, []);
-toc;
+% tic;
+% x = gmres(@Sp.assemble, load, 10, 1e-6, 3200, M, []);
+% toc;
 
+% NAIVE UMFPACK SOLVER.
+x = M \ load;
 Sp.plot(x);
 
-%%% Calculate the forward solution.
+%%% CALCULATE DATA FOR A SINGLE INSTANCE.
+
+x_unpack = reshape(x, N, L);
+s1     = Sp.cache.K(1, :);
+
+H      = Sp.Coeff.absorption.* (x_unpack * s1'); % GRUNEISEN ALSO MULTIPLIED.
+Sp.plotData(H);
+
+%%% BACKWARD SOLVER.
+%
+% ADJOINT STATE REQUIRES THE TRANSPOSE OF M, BUT M IS SYMMETRIC (OPERATOR
+% IS ADJOINT).
 
 
-%%% Calculate the backward solution.
+
