@@ -278,52 +278,7 @@ classdef SPN < handle
     %%% BACKWARD FUNCTIONS FOR SINGLE COEFFICIENT
     methods 
         function sigmaA = SingleRecSigmaA(obj, H)
-            % DUE TO LINEARITY, ONE NEEDS TO BUILD THE BILINEAR FORM
-            % SEPARATELY.
-            M = obj.assembleSingleRecSigmaA();
-            
-        end
-    end
-    
-    methods (Access = private)
-        function [M] = assembleSingleRecSigmaA(obj)
-            % RETURN THE ASSEMBLED MATRIX DIRECTLY. SOLVING THE LINEAR
-            % EQUATION WILL BE CHANLLENGING IF THE SYSTEM IS LARGE.
-            % PARTICULARLY THE PRECONDITIONER IS NOT AVAILABLE EXPLICITLY.
-            
-            N = size(obj.Model.space.nodes, 2);
-            L = (obj.Order + 1) / 2;
-            g = obj.G;
-            
-            
-            M = sparse(N * L, N * L);
-            
-            
-            if obj.Approx == 1
-                % INDEXING MIGHT BE SLOW.
-                
-                % STEP 1. STIFFNESS (diagonal)
-                v = diag( 1./( 4 * (1:L) - 1) ./ (1 - g.^(2*(1:L) - 1)) );
-                M = kron(v, obj.cache.S);
-                
-                % STEP 2. MASS 
-                % USE KRON TO DEFINE THE MASS MATRIX 
-                
-                %%% The data part replaced into the load.
-%                 s_1 = obj.cache.K(1, :);
-%                 M = M + kron(s_1' * s_1, obj.cache.MA);
-                
-                for n = 2:L
-                    s_n = obj.cache.K(n, :);
-                    M = M + (1-g^(2 * n - 2)) * (4*n-3) * kron(s_n' * s_n, obj.cache.MS);
-                end
-                
-                % STEP 3. TRACE                
-                M = M + kron(obj.cache.B, obj.cache.E);
-                
-            else
-                disp('Not Implemented Error.\n');
-            end
+            % DUE TO LINEAR
         end
     end
     
