@@ -224,8 +224,7 @@ classdef SPN < handle
             l_ = reshape(l, N*L, 1);
         end
         
-        
-        function plot(obj, Y)
+        function plotSolution(obj, Y)
             % PLOT ALL MODES
             L = (obj.Order + 1) / 2;
             N = size(obj.Model.space.nodes, 2);

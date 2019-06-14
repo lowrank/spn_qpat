@@ -54,7 +54,7 @@ x = M \ load;
 t = toc;
 
 fprintf('Solution time %6.2f seconds\n', t);
-Sp.plot(x);
+Sp.plotSolution(x);
 
 %%% CALCULATE DATA FOR A SINGLE INSTANCE.
 
