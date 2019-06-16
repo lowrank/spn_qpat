@@ -1,6 +1,4 @@
 function [ P, Q] = Efunc( n )
-%UNTITLED13 Summary of this function goes here
-%   Detailed explanation goes here
 
 P =  eye(n, n);
 Q = P;
