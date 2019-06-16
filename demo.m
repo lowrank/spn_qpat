@@ -71,5 +71,8 @@ Sp.plotData(H);
 % ADJOINT STATE REQUIRES THE TRANSPOSE OF M, BUT M IS SYMMETRIC (OPERATOR
 % IS ADJOINT).
 
+sigmaA = Sp.SingleRecSigmaA(H, load);
+
+disp(norm(sigmaA - Sp.Coeff.absorption) / norm(Sp.Coeff.absorption));
 
 

@@ -277,10 +277,38 @@ classdef SPN < handle
     
     %%% BACKWARD FUNCTIONS FOR SINGLE COEFFICIENT
     methods 
-        function sigmaA = SingleRecSigmaA(obj, H)
+        function sigmaA = SingleRecSigmaA(obj, H, f)
             % DUE TO LINEARITY, ONE NEEDS TO BUILD THE BILINEAR FORM
             % SEPARATELY.
             M = obj.assembleSingleRecSigmaA();
+            
+            % Get the sigmaA * s1 * Phi by dividing Gruneisen
+            h = H ./ obj.Coeff.gruneisen;
+            
+            elems = obj.Model.space.elems;
+            f_ref = obj.Model.facet.ref;
+            qh = obj.mapping(h, elems, f_ref');
+            
+            
+            N = size(obj.Model.space.nodes, 2);
+            L = (obj.Order + 1) / 2;
+            
+            l = zeros(N, L);
+            y = obj.Model.build('l', qh);
+            s1 = obj.cache.K(1, :);
+            for i = 1:L
+                l(:, i) = s1(i) * y;
+            end
+            l_ = reshape(l, N*L, 1);
+            
+            
+            total_load = f - l_;
+            
+            x = M \ total_load;
+            x_unpack = reshape(x, N, L);
+            h_      = (x_unpack * s1');
+            
+            sigmaA  = h ./ h_;
             
         end
     end
