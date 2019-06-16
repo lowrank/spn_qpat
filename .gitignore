@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# unix/mac suffix
+*.m~
