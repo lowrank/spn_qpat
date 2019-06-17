@@ -65,6 +65,7 @@ classdef SPN < handle
             obj.cache.S  = obj.Model.build('s', 1./qScattering);
             obj.cache.MA = obj.Model.build('m', qAbsorption);
             obj.cache.MS = obj.Model.build('m', qScattering);
+            obj.cache.Se = obj.Model.build('s', 1);
             
             % BOUNDARY MATRIX.
             obj.cache.E = obj.Model.build('e', 1, 'all');
@@ -229,12 +230,10 @@ classdef SPN < handle
             N = size(obj.Model.space.nodes, 2);
             
             C = floor(sqrt(L));
-            S = L - C^2;
+            R = floor(L / C);
             
-            if S > 0
-                R = C + 1;
-            else
-                R = C;
+            if C*R < L
+                R = R + 1;
             end
 
             idx = 0;
@@ -262,7 +261,6 @@ classdef SPN < handle
         end
         
         function plotData(obj, H)
-            figure(2);
             trisurf(obj.Model.space.elems(1:3,:)', ...
                     obj.Model.space.nodes(1,:), obj.Model.space.nodes(2,:),...
                     H, ...
@@ -287,8 +285,7 @@ classdef SPN < handle
             
             elems = obj.Model.space.elems;
             f_ref = obj.Model.facet.ref;
-            qh = obj.mapping(h, elems, f_ref');
-            
+            qh = obj.mapping(h, elems, f_ref');    
             
             N = size(obj.Model.space.nodes, 2);
             L = (obj.Order + 1) / 2;
@@ -309,6 +306,7 @@ classdef SPN < handle
             h_      = (x_unpack * s1');
             
             sigmaA  = h ./ h_;
+
             
         end
     end

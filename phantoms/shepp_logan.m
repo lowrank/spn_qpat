@@ -13,8 +13,12 @@ end
 X = X(:);
 Y = Y(:);
 ph = phantom('Modified Shepp-Logan', N);
+
+% ph = imgaussian(ph, 20);
+
 F = scatteredInterpolant(X,Y,ph(:));
 ret = F(x(1,:), x(2,:)) * scale + shift;
+
 
 end
 
