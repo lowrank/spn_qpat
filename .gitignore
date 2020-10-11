@@ -33,3 +33,4 @@
 
 # unix/mac suffix
 *.m~
+/export_fig
