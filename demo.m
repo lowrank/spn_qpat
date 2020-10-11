@@ -3,7 +3,7 @@
 % load phantom into coefficients
 absorption = @(x)shepp_logan(x, 500, 0.02, 0.02);
 scattering = @derenzo;
-gruneisen  = @(x)(0.75 + 0 * x(1,:));
+gruneisen  = @(x)(0.5 + 0.25 * sin(2 * pi * x(1,:)) .* sin(2 * pi * x(2,:)));
 
 %%% POINT GAUSSIAN SOURCES
 source1     = @(x)(gaussian_source(x, [0,0], 1.0, 0.1) + ...
@@ -11,9 +11,10 @@ source1     = @(x)(gaussian_source(x, [0,0], 1.0, 0.1) + ...
                    gaussian_source(x, [1,1], 1.0, 0.1) + ...
                    gaussian_source(x, [0,1], 1.0, 0.1 )); % SOURCE ONLY RESIDES ON THE BOUNDARY
                
-source2     = @(x)(gaussian_source(x, [1,0])); % SOURCE ONLY RESIDES ON THE BOUNDARY
+source2     = @(x)(gaussian_source(x, [0,0])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source3     = @(x)(gaussian_source(x, [1,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source4     = @(x)(gaussian_source(x, [0,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
+source5     = @(x)(0 .* x + 1);
 
 %%% FEM CLASS OPTION
 femm_opt   = struct(...
@@ -52,7 +53,7 @@ t = toc;
 fprintf('Assemble time %6.2f seconds\n', t);
 
 %%% LOAD VECTOR
-f = source1(ForwardModel.Model.space.nodes)';
+f = source5(ForwardModel.Model.space.nodes)';
 load = ForwardModel.load(f);
 
 % tic;
@@ -79,8 +80,8 @@ H      = ForwardModel.Coeff.gruneisen .* ...
 figure(2);
 ForwardModel.plotData(H);
 
-H = noisy(H, 0.10);
-
+H = noisy(H, 0.0);
+%%
 %%% BACKWARD SOLVER.
 %
 % ADJOINT STATE REQUIRES THE TRANSPOSE OF M, BUT M IS SYMMETRIC (OPERATOR
@@ -88,7 +89,7 @@ H = noisy(H, 0.10);
 
 %%
 opt = struct(...
-    'order', 1, ...
+    'order',1, ...
     'femm_opt', femm_opt, ...
     'coeff', coeff_opt,...
     'source', source1,...
@@ -99,7 +100,7 @@ opt = struct(...
 BackwardModel = SPN(opt);
 
 %%% 1. Single Reconstruction for absorption.
-%load = BackwardModel.load(f);
+load = BackwardModel.load(f);
 sigmaA = BackwardModel.SingleRecSigmaA(H, load);
 
 fprintf('Reconstruction error is %6.2e\n', ...

@@ -261,6 +261,7 @@ classdef SPN < handle
         end
         
         function plotData(obj, H)
+            figure('Renderer', 'painters', 'Position', [10 10 600 480])
             trisurf(obj.Model.space.elems(1:3,:)', ...
                     obj.Model.space.nodes(1,:), obj.Model.space.nodes(2,:),...
                     H, ...
@@ -276,6 +277,8 @@ classdef SPN < handle
     %%% BACKWARD FUNCTIONS FOR SINGLE COEFFICIENT
     methods 
         function sigmaA = SingleRecSigmaA(obj, H, f)
+            
+            
             % DUE TO LINEARITY, ONE NEEDS TO BUILD THE BILINEAR FORM
             % SEPARATELY.
             M = obj.assembleSingleRecSigmaA();
@@ -291,14 +294,15 @@ classdef SPN < handle
             L = (obj.Order + 1) / 2;
             
             l = zeros(N, L);
+            
             y = obj.Model.build('l', qh);
             s1 = obj.cache.K(1, :);
             for i = 1:L
                 l(:, i) = s1(i) * y;
             end
+           
             l_ = reshape(l, N*L, 1);
-            
-            
+    
             total_load = f - l_;
             
             x = M \ total_load;
@@ -309,6 +313,12 @@ classdef SPN < handle
 
             
         end
+        
+        
+        function sigmaS  = SingleRecSigmaS(H, f)
+            
+        end
+        
     end
     
     methods (Access = private)
@@ -351,6 +361,10 @@ classdef SPN < handle
                 disp('Not Implemented Error.\n');
             end
         end
+        
+        
+        
+        
     end
     
     
