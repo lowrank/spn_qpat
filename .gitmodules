@@ -1,3 +1,6 @@
 [submodule "femm"]
 	path = femm
 	url = https://github.com/lowrank/femm
+[submodule "rte"]
+	path = rte
+	url = https://github.com/lowrank/rte.git
