@@ -35,7 +35,7 @@ opt = struct(...
     'order', 1, ...
     'femm_opt', femm_opt, ...
     'coeff', coeff_opt,...
-    'source', source1 ,...
+    'source', source1 ,... % not used.
     'approx', 1, ...
     'g', 0.5 ...
     );
@@ -55,10 +55,10 @@ fprintf('Assemble time %6.2f seconds\n', t);
 %%% LOAD VECTOR
 f = source5(ForwardModel.Model.space.nodes)';
 load = ForwardModel.load(f);
-
+% 
 % tic;
-% x = gmres(@Sp.assemble, load, 10, 1e-6, 3200, M, []);
-% toc;
+% x = gmres(@ForwardModel.assemble, load, 10, 1e-6, 3200, M, []);
+% t=toc;
 
 % NAIVE UMFPACK SOLVER.
 tic;
@@ -77,7 +77,6 @@ H      = ForwardModel.Coeff.gruneisen .* ...
     ForwardModel.Coeff.absorption.* (x_unpack * s1'); % GRUNEISEN ALSO MULTIPLIED.
 
 %%% Plot the data H.
-figure(2);
 ForwardModel.plotData(H);
 
 H = noisy(H, 0.0);
@@ -106,12 +105,12 @@ sigmaA = BackwardModel.SingleRecSigmaA(H, load);
 fprintf('Reconstruction error is %6.2e\n', ...
     (norm(sigmaA - ForwardModel.Coeff.absorption) / norm(ForwardModel.Coeff.absorption)));
 
-figure(2);
-ForwardModel.plotData(ForwardModel.Coeff.absorption);
-
-figure(3);
-BackwardModel.plotData(sigmaA);
-
-figure(4);
-BackwardModel.plotData(sigmaA - ForwardModel.Coeff.absorption);
+% figure(2);
+% ForwardModel.plotData(ForwardModel.Coeff.absorption);
+% 
+% figure(3);
+% BackwardModel.plotData(sigmaA);
+% 
+% figure(4);
+% BackwardModel.plotData(sigmaA - ForwardModel.Coeff.absorption);
 
