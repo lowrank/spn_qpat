@@ -1,5 +1,5 @@
 
-boundary = @(x, y, v)  (1.0 + sin(4 * pi * x));
+boundary = @(x, y, v)(1+x);  %(1.0 + sin(4 * pi * x));
 
 sigma = struct(...
     'xs', @derenzo,...

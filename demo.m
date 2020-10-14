@@ -14,12 +14,12 @@ source1     = @(x)(gaussian_source(x, [0,0], 1.0, 0.1) + ...
 source2     = @(x)(gaussian_source(x, [0,0])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source3     = @(x)(gaussian_source(x, [1,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source4     = @(x)(gaussian_source(x, [0,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
-source5     = @(x)(sin(4 * pi * x(1,:)) + 1);
+source5     = @(x)(x(1,:)+ 1);
 
 %%% FEM CLASS OPTION
 femm_opt   = struct(...
     'deg', 1,...
-    'qdeg', 3, ...
+    'qdeg', 4, ...
     'min_area', 1e-4, ...
     'edge', [0 1 1 0; 0 0 1 1]...
     );
@@ -32,12 +32,13 @@ coeff_opt  = struct(...
 
 %%% The option struct for SPN.
 opt = struct(...
-    'order', 17, ...
+    'order',1, ...
     'femm_opt', femm_opt, ...
     'coeff', coeff_opt,...
     'source', source1 ,... % not used.
     'approx', 1, ...
-    'g', 0.5 ...
+    'g', 0.5, ...
+    'reg', 1e-10...
     );
 
 ForwardModel = SPN(opt);
@@ -79,9 +80,16 @@ H      = ForwardModel.Coeff.gruneisen .* ...
 
 
 %%% Plot the data H.
-ForwardModel.plotData(H);
 
-H = noisy(H, 0.0);
+% ForwardModel.plotData(H);
+% noise_lvl = 0.005;
+H = noisy(H, 0.05/sqrt(N));
+% res = H2 - H;
+% scal = sqrt((res' * ( ForwardModel.cache.M + ForwardModel.cache.S )* res ) / ...
+%     (H' * ( ForwardModel.cache.M + ForwardModel.cache.S )* H ));
+% 
+% H = H + (H2 - H) * noise_lvl / scal;
+
 %%
 %%% BACKWARD SOLVER.
 %
@@ -100,19 +108,25 @@ opt = struct(...
 
 BackwardModel = SPN(opt);
 
-%%% 1. Single Reconstruction for absorption.
-load = BackwardModel.load(f);
-sigmaA = BackwardModel.SingleRecSigmaA(H, load);
-
-fprintf('Reconstruction error is %6.2e\n', ...
-    (norm(sigmaA - ForwardModel.Coeff.absorption) / norm(ForwardModel.Coeff.absorption)));
-
-% figure(2);
-% ForwardModel.plotData(ForwardModel.Coeff.absorption);
+% %%% 1. Single Reconstruction for absorption.
+% load = BackwardModel.load(f);
+% sigmaA = BackwardModel.SingleRecSigmaA(H, load);
 % 
-% figure(3);
-% BackwardModel.plotData(sigmaA);
+% fprintf('Reconstruction error is %6.2e\n', ...
+%     (norm(sigmaA - ForwardModel.Coeff.absorption) / norm(ForwardModel.Coeff.absorption)));
 % 
-% figure(4);
+% % figure(2);
+% % ForwardModel.plotData(ForwardModel.Coeff.absorption);
+% % 
+% % figure(3);
+% % BackwardModel.plotData(sigmaA);
+% % 
+% % figure(4);
 % BackwardModel.plotData(sigmaA - ForwardModel.Coeff.absorption);
+
+%%
+BackwardModel.Reg =1e-8 *N ;
+ret = BackwardModel.SingleRecSigmaS(H, f, ones(N,1), 1);
+BackwardModel.plotData(ret)
+norm(ret - ForwardModel.Coeff.scattering)/norm(ForwardModel.Coeff.scattering)
 

@@ -15,8 +15,8 @@ source1     = @(x)(gaussian_source(x, [0,0], 1.0, 0.1) + ...
 source2     = @(x)(gaussian_source(x, [0,0])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source3     = @(x)(gaussian_source(x, [1,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
 source4     = @(x)(gaussian_source(x, [0,1])); % SOURCE ONLY RESIDES ON THE BOUNDARY
-% source5     = @(x)(x(1,:) + 1);
-source5     = @(x)(1 .* sin(4 * pi * x(1,:)) + 1);
+source5     = @(x)(x(1,:) + 1);
+% source5     = @(x)(1 .* sin(4 * pi * x(1,:)) + 1);
 
 %% SETTING OPTIONS
 femm_opt   = struct(...
